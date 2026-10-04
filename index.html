@@ -855,7 +855,7 @@
       visibility: hidden
     }
 
-    #ldr img {
+    #ldr video {
       width: min(720px, 92vw);
       height: auto;
       max-height: 80vh;
@@ -934,8 +934,8 @@
 </head>
 
 <body>
-  <div id="ldr" role="status" aria-label="Loading RAIZE The Salon"><img id="ldg" alt="RAIZE The Salon"
-      src="RTfeF (1).gif"><span
+    <div id="ldr" role="status" aria-label="Loading RAIZE The Salon"><video id="ldg" muted playsinline preload="auto"
+      aria-label="RAIZE The Salon intro"><source src="B_scissors_comb.mp4" type="video/mp4"></video><span
       class="sk">Tap to skip</span></div>
   <noscript>
     <style>
@@ -946,13 +946,21 @@
   </noscript>
   <script>
     (function () {
-      var l = document.getElementById('ldr'), g = document.getElementById('ldg'), de = document.documentElement, done = false, gifDone = false, loaded = document.readyState == 'complete';
+      var l = document.getElementById('ldr'), g = document.getElementById('ldg'), de = document.documentElement, done = false, videoDone = false, loaded = document.readyState == 'complete';
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) { l.remove(); return; }
       de.classList.add('ld');
       function hide() { if (done) return; done = true; l.classList.add('out'); de.classList.remove('ld'); setTimeout(function () { l.remove(); }, 800); window.dispatchEvent(new Event('loaderdone')); }
-      function check() { if (gifDone && loaded) hide(); }
-      function start() { setTimeout(function () { gifDone = true; check(); }, 4300); }
-      if (g.complete && g.naturalWidth) start(); else g.addEventListener('load', start);
+      function check() { if (videoDone && loaded) hide(); }
+      function finishVideo() { if (videoDone) return; videoDone = true; check(); }
+      function start() {
+        if (g.dataset.started) return;
+        g.dataset.started = 'true';
+        g.addEventListener('ended', finishVideo, { once: true });
+        g.addEventListener('error', finishVideo, { once: true });
+        g.play().catch(finishVideo);
+        setTimeout(finishVideo, Math.min(7000, (g.duration || 4.3) * 1000 + 800));
+      }
+      if (g.readyState >= 2) start(); else g.addEventListener('loadeddata', start, { once: true });
       addEventListener('load', function () { loaded = true; check(); });
       setTimeout(hide, 9000);
       l.addEventListener('click', hide);
